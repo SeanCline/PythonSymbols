@@ -89,17 +89,27 @@ def extract_archives_in_direcory(path):
             extract_archive(file_path)
 
 
-def store_pdbs_in_direcory(pdb_path, store_path, version_comment):
+def store_pdbs_in_direcory(pdb_path, store_path, version):
     """Recursively adds all of the pdb files in a provided directory to the symbols store."""
     sym_store = symstore.Store(store_path)
-    transaction = sym_store.new_transaction("CPython", version_comment)
+    transaction = sym_store.new_transaction("CPython", version)
     num_files_stored = 0
     for root, subdirs, files in os.walk(pdb_path):
         for file in files:
-            if file.endswith(".pdb"):
-                file_path = os.path.join(root, file)
+            file_path = os.path.join(root, file)
+            
+            # Rename the python.pdb to python##.pdb.
+            if "core_pdb" in root and file == "python.pdb":
+                major, minor, *_ = version.split(".")
+                new_file_path = file_path.replace("python.pdb", "python" + major + minor + ".pdb")
+                os.rename(file_path, new_file_path)
+                file_path = new_file_path
+            
+            # Add PDB files 
+            if file_path.endswith(".pdb"):
                 transaction.add_file(file_path, symstore.cab.compression_supported)
                 num_files_stored += 1
+    
     if num_files_stored > 0:
         sym_store.commit(transaction)
 
