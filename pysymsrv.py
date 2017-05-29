@@ -78,7 +78,7 @@ def extract_archive(archive_filename):
     _logger.info("Extracting: %r...", archive_filename)
     absolute_path = os.path.abspath(archive_filename)
     targetdir = os.path.splitext(absolute_path)[0]
-    subprocess.call(["7z", "x", absolute_path, "-o" + targetdir])
+    subprocess.call(["7z", "x", "-y", absolute_path, "-o" + targetdir])
 
 
 def extract_archives_in_direcory(path):
