@@ -2,6 +2,9 @@
 WinDbg symbols for CPython
 ==========================
 
+[![Build Status](https://img.shields.io/github/last-commit/SeanCline/PythonSymbols/gh-pages.svg?label=Symbol%20Server%20Updated)](https://travis-ci.org/SeanCline/PythonSymbols)
+
+
 This repository hosts the symbols for all recent Windows builds of the CPython interpreter. (Both x86 and x64.)
 
 It stays up to date automatically by looking for new Python releases weekly and adding their symbols to the symbols store.
