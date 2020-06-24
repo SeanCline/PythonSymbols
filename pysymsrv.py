@@ -19,14 +19,32 @@ def download_file(source_url, destination_filename):
         shutil.copyfileobj(resp, destination_file)
 
 
-def get_available_python_versions():
+def try_download_file(source_url, destination_filename, already_downloaded_files):
+    """Downloads a file at the provided url and adds it to the set of downloaded archives if it hasn't already been downloaded."""
+    # If we've already downloaded the file, then it's already in the symbol store.
+    if source_url in already_downloaded_files:
+        _logger.info("Skipping already downloaded file: %r", source_url)
+        return
+    
+    try:
+        download_file(source_url, destination_filename)
+        already_downloaded_files.add(source_url)
+    except urllib.error.HTTPError as err:
+        _logger.info("Failed to download: %r", source_url)
+        
+        if err.code == 404:
+            already_downloaded_files.add(source_url) # Mark file-not-found as downloaded.
+        pass # Just keep going.
+
+
+def get_available_python_versions(root):
     """Returns a list of python versions available from python.org."""
-    indexhtml = fetch_page("https://www.python.org/ftp/python/")
+    indexhtml = fetch_page(root)
     return re.findall(r"<a\s+href=\"(\d+\.\d+(?:\.\d+)?)\/?\"\s*>", indexhtml)
 
 
-def read_stored_versions(filename="versions.json"):
-    """Reads the list of Python versions that have already been added to the store."""
+def read_downloaded_files_list(filename="downloaded.json"):
+    """Reads the list of archives that have already been added to the store."""
     try:
         with open(filename, "r") as fp:
             return json.load(fp)
@@ -34,15 +52,15 @@ def read_stored_versions(filename="versions.json"):
         return []
 
 
-def save_stored_versions(versions, filename="versions.json"):
-    """Saves the list of python versions in the store to disk."""
+def save_downloaded_files_list(files, filename="downloaded.json"):
+    """Saves the list of archives we've already download to disk."""
     with open(filename, "w") as fp:
-        json.dump(list(versions), fp)
+        json.dump(list(files), fp)
 
 
-def download_pdbs_for_version(version, target_dir):
-    """Downloads the debugging symbols for a given version of Python."""
-    base_url = urllib.parse.urljoin("https://www.python.org/ftp/python/", version + "/")
+def download_pdbs_for_version(root, version, target_dir, already_downloaded_files):
+    """Downloads the debugging symbols for a given version of Python."""    
+    base_url = urllib.parse.urljoin(root, version + "/")
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
         os.makedirs(os.path.join(target_dir, "win32"))
@@ -66,11 +84,7 @@ def download_pdbs_for_version(version, target_dir):
     for archive in archives:
         source_url = urllib.parse.urljoin(base_url, archive)
         destination_filename = os.path.join(target_dir, archive)
-        try:
-            download_file(source_url, destination_filename)
-        except urllib.error.HTTPError:
-            _logger.info("Failed to download: %r", source_url)
-            pass # Just keep going.
+        try_download_file(source_url, destination_filename, already_downloaded_files)
 
 
 def extract_archive(archive_filename):
@@ -89,10 +103,10 @@ def extract_archives_in_direcory(path):
             extract_archive(file_path)
 
 
-def store_pdbs_in_direcory(pdb_path, store_path, version):
+def store_pdbs_in_directory(pdb_path, store_path, product, version):
     """Recursively adds all of the pdb files in a provided directory to the symbols store."""
     sym_store = symstore.Store(store_path)
-    transaction = sym_store.new_transaction("CPython", version)
+    transaction = sym_store.new_transaction(product, version)
     num_files_stored = 0
     for root, subdirs, files in os.walk(pdb_path):
         for file in files:
@@ -114,27 +128,58 @@ def store_pdbs_in_direcory(pdb_path, store_path, version):
         sym_store.commit(transaction)
 
     
-def fetch_and_store_pdbs_for_version(version):
+def fetch_and_store_pdbs_for_version(root, product, version, already_downloaded_files):
     temp_folder = version + "-temp/"
     store_folder = "./symbols"
-    download_pdbs_for_version(version, temp_folder)
+    download_pdbs_for_version(root, version, temp_folder, already_downloaded_files)
     extract_archives_in_direcory(temp_folder)
-    store_pdbs_in_direcory(temp_folder, store_folder, version)
+    store_pdbs_in_directory(temp_folder, store_folder, product, version)
     shutil.rmtree(temp_folder)
+
+
+def download_pdbs_at_root(root, product, already_downloaded_files):
+    available_versions = get_available_python_versions(root)
+    _logger.info("Versions available from %s: %r", root, available_versions)
+
+    for version in available_versions:
+        fetch_and_store_pdbs_for_version(root, product, version, already_downloaded_files)
+    
+    
+def get_old_stackless_pdb_file_list(root):
+    indexhtml = fetch_page(root)
+    return re.findall(r"<a\s+href=\"(.*?\bpdb.*?\.zip)\"\s*>", indexhtml)
+    
+    
+def fetch_and_store_old_stackless_pdbs(root, already_downloaded_files):
+    archives = get_old_stackless_pdb_file_list(root)
+    
+    store_folder = "./symbols"    
+    for archive in archives:
+        temp_folder = archive + "-temp/"
+        if not os.path.exists(temp_folder):
+            os.makedirs(temp_folder)
+    
+        source_url = urllib.parse.urljoin(root, archive)
+        destination_filename = os.path.join(temp_folder, archive)
+        try_download_file(source_url, destination_filename, already_downloaded_files)
+        extract_archives_in_direcory(temp_folder)
+        store_pdbs_in_directory(temp_folder, store_folder, "StacklessPython", archive)
+        shutil.rmtree(temp_folder)
+    
     
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-
-    available_versions = get_available_python_versions()
-    _logger.info("Versions available from Python.org: %r", available_versions)
-
-    stored_versions = read_stored_versions();
-    _logger.info("Versions already stored: %r", stored_versions)
     
-    needed_versions = set(available_versions) - set(stored_versions)
-    _logger.info("Need to fetch symbols for versions: %r", needed_versions)
+    already_downloaded_files = set(read_downloaded_files_list());
+    _logger.info("Files already downloaded: %r", already_downloaded_files)
     
-    for version in needed_versions:
-        fetch_and_store_pdbs_for_version(version)
-        stored_versions.append(version)
-        save_stored_versions(stored_versions)
+    # Download official Python symbols.
+    download_pdbs_at_root("https://www.python.org/ftp/python/", "CPython", already_downloaded_files)
+    
+    #Download Stackless Python symbols. (3.5+)
+    download_pdbs_at_root("http://www.stackless.com/binaries/MSI/", "StacklessPython", already_downloaded_files)
+    
+    # Download Stackless Python symbols (Older versions.)
+    fetch_and_store_old_stackless_pdbs("http://www.stackless.com/binaries/", already_downloaded_files)
+    
+    save_downloaded_files_list(already_downloaded_files)
