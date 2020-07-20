@@ -12,6 +12,7 @@ install:
 
 script:
   - python pysymsrv.py
+  - python generateindex.py
 
 deploy:
   provider: pages
