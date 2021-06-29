@@ -119,9 +119,10 @@ def store_pdbs_in_directory(pdb_path, store_path, product, version):
                 os.rename(file_path, new_file_path)
                 file_path = new_file_path
             
-            # Add PDB files 
+            # Add PDB files
+            is_compression_supported = symstore.cab.compress is not None
             if file_path.endswith(".pdb"):
-                transaction.add_file(file_path, symstore.cab.compression_supported)
+                transaction.add_file(file_path, is_compression_supported)
                 num_files_stored += 1
     
     if num_files_stored > 0:

@@ -1,2 +1,2 @@
-symstore
-docutils
+symstore~=0.3.2
+docutils~=0.17.0
