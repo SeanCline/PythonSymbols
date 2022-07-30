@@ -45,7 +45,7 @@ jobs:
           python generateindex.py
       - name: Deploy new symbols to GH Pages.
         run: |
-          date > lastrun.txt
+          # date > lastrun.txt
           git add --all :/
           git commit -m "Automatic update of gh-pages"
           git push
