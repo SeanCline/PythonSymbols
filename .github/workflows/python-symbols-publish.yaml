@@ -24,7 +24,7 @@ jobs:
         with:
           ref: gh-pages
           fetch-depth: 0 # Fetch all branches so we can merge.
-      - name: Merge any recent changes into the gh-pagest branch.
+      - name: Merge any recent changes into the gh-pages branch.
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com

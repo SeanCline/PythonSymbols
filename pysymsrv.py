@@ -54,8 +54,10 @@ def read_downloaded_files_list(filename="downloaded.json"):
 
 def save_downloaded_files_list(files, filename="downloaded.json"):
     """Saves the list of archives we've already download to disk."""
+    filelist = list(files)
+    filelist.sort()
     with open(filename, "w") as fp:
-        json.dump(list(files).sort(), fp)
+        json.dump(list(filelist), fp)
 
 
 def download_pdbs_for_version(root, version, target_dir, already_downloaded_files):
