@@ -1,6 +1,6 @@
 """Downloads all Python symbols and checks them into a symbol server."""
 
-import sys, os, subprocess, logging, shutil, re, urllib.request, urllib.parse, json
+import sys, os, datetime, subprocess, logging, shutil, re, urllib.request, urllib.parse, json
 import symstore
 
 _logger = logging.getLogger(__name__)
@@ -108,7 +108,9 @@ def extract_archives_in_direcory(path):
 def store_pdbs_in_directory(pdb_path, store_path, product, version):
     """Recursively adds all of the pdb files in a provided directory to the symbols store."""
     sym_store = symstore.Store(store_path)
-    transaction = sym_store.new_transaction(product, version)
+    now = datetime.datetime.now().isoformat()
+    comment = f"{product} - {version} - {now}"
+    transaction = sym_store.new_transaction(product, version, comment)
     num_files_stored = 0
     for root, subdirs, files in os.walk(pdb_path):
         for file in files:
