@@ -57,7 +57,7 @@ def save_downloaded_files_list(files, filename="downloaded.json"):
     filelist = list(files)
     filelist.sort()
     with open(filename, "w") as fp:
-        json.dump(list(filelist), fp)
+        json.dump(list(filelist), fp, indent=0)
 
 
 def download_pdbs_for_version(root, version, target_dir, already_downloaded_files):
