@@ -44,6 +44,7 @@ jobs:
         run: |
           python generateindex.py
       - name: Deploy new symbols to GH Pages.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           # date > lastrun.txt
           git add --all :/
