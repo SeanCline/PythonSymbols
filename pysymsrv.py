@@ -67,6 +67,7 @@ def download_pdbs_for_version(root, version, target_dir, already_downloaded_file
         os.makedirs(target_dir)
         os.makedirs(os.path.join(target_dir, "win32"))
         os.makedirs(os.path.join(target_dir, "amd64"))
+        os.makedirs(os.path.join(target_dir, "arm64"))
     
     archives = [
         "python-" + version + "-pdb.zip", # Python 2.x
@@ -81,6 +82,11 @@ def download_pdbs_for_version(root, version, target_dir, already_downloaded_file
         "amd64/lib_pdb.msi", # Python 3.x
         "amd64/tkltk_pdb.msi", # Python 3.x
         "amd64/test_pdb.msi", # Python 3.x
+        "arm64/core_pdb.msi", # Python 3.x
+        "arm64/exe_pdb.msi", # Python 3.x
+        "arm64/lib_pdb.msi", # Python 3.x
+        "arm64/tkltk_pdb.msi", # Python 3.x
+        "arm64/test_pdb.msi", # Python 3.x
     ]
     
     for archive in archives:

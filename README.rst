@@ -7,7 +7,7 @@ WinDbg symbols for CPython
     :target: https://github.com/SeanCline/PythonSymbols/actions
     :alt: Build Status
 
-This repository hosts the symbols for all recent Windows builds of the CPython interpreter. (Both x86 and x64.)
+This repository hosts the symbols for all recent Windows builds of the CPython interpreter (x86, x64, and ARM64).
 
 It stays up to date automatically by looking for new Python releases weekly and adding their symbols to the symbols store.
 
