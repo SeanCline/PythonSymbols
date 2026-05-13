@@ -20,17 +20,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout gh-pages branch.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: gh-pages
           fetch-depth: 0 # Fetch all branches so we can merge.
+          filter: blob:none
       - name: Merge any recent changes into the gh-pages branch.
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git merge -X theirs origin/main
       - name: Setup Python.
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.x
       - name: Install dependencies
@@ -46,7 +47,6 @@ jobs:
       - name: Deploy new symbols to GH Pages.
         if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'schedule'
         run: |
-          # date > lastrun.txt
           git add --all :/
           git diff-index --quiet HEAD || git commit -m "Automatic update of gh-pages"
           git push
